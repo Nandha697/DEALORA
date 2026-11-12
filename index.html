@@ -932,8 +932,37 @@ function home(){
 function browser(l){const subs=[...new Set(l.map(p=>p.subcategory))];return `<div class="toolbar"><select id="fc" aria-label="Category"><option value="">All categories</option>${subs.map(s=>`<option>${esc(s)}</option>`).join('')}</select><select id="fs" aria-label="Sort"><option value="new">Newest</option><option value="low">Price: low to high</option><option value="high">Price: high to low</option><option value="off">Biggest verified discount</option></select></div><div id="bl">${grid(l)}</div>`}
 function wireBrowser(l){const f=()=>{const c=$('#fc').value;$('#bl').innerHTML=grid(sorter(l.filter(p=>!c||p.subcategory===c),$('#fs').value))};$('#fc').onchange=$('#fs').onchange=f}
 function list(title,l,extra=''){setTitle(title);app.innerHTML=`<section><h2>${esc(title)}</h2>${extra}${browser(l)}</section>${disc()}`;wireBrowser(l)}
-function search(){const t=query.trim().toLowerCase();setTitle('Search');const w=t.split(/\s+/);const r=pub().filter(p=>w.every(x=>(p.name+' '+p.subcategory+' '+p.retailer).toLowerCase().includes(x)));
- app.innerHTML=`<section><h2>Results for "${esc(query)}"</h2>${r.length?grid(r):`<div class="note">No products match "${esc(query)}". Try a shorter word or browse departments.</div>`}</section>${disc()}`}
+function search() {
+  const t = query.trim().toLowerCase();
+  setTitle('Search');
+
+  const r = pub().filter(p => {
+    const name = String(p.name || '').toLowerCase();
+    const category = String(p.category || '').toLowerCase();
+    const subcategory = String(p.subcategory || '').toLowerCase();
+
+    return (
+      name.includes(t) ||
+      category.includes(t) ||
+      subcategory.includes(t)
+    );
+  });
+
+  app.innerHTML = `
+    <section>
+      <h2>Results for "${esc(query)}"</h2>
+      ${
+        r.length
+          ? grid(r)
+          : `<div class="note">
+              No matching products found.
+              Try another product name or category.
+            </div>`
+      }
+    </section>
+    ${disc()}
+  `;
+}
 function detail(id){const p=P.find(x=>x.id===id&&(x.published||session));if(!p){setTitle('Not found');app.innerHTML=`<div class="note"><h2>Product not found</h2><a class="btn" href="#/">Back home</a></div>`;return}
  setTitle(p.name,p.description?.slice(0,150));const ok=p.affiliate_url&&okUrl(p.affiliate_url);
  app.innerHTML=`<section class="detail"><div class="card"><div class="img">${p.image?`<img src="${esc(p.image)}" alt="${esc(p.name)}">`:'No image'}</div></div><div><p class="ret">${esc(p.category)} / ${esc(p.subcategory)}</p><h1>${esc(p.name)}</h1><div class="pr">${inr(p.price)}${verified(p)?`<s>${inr(p.original_price)}</s> ${pct(p)}% off`:''}</div><p>${esc(p.description)}</p><p class="ret">Sold by ${esc(p.retailer)}${p.last_verified?`. Price last checked ${esc(p.last_verified)}.`:'.'}</p>
